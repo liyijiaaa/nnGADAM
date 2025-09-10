@@ -336,7 +336,7 @@ def train_global(global_net, opt, graph, args):
         # 修改在这里添加mix_score
         beta = math.pow(0.9,epoch)
         beta2 = 1-beta
-        mix_score = -(beta * scores + beta2 * pos)
+        mix_score = -(beta2 * scores + beta * pos)
         if epoch >= warm_up_epoch and (epoch - update_day) >= update_internal:
             # 计算奖励（采样效果评估）
             r = get_reward(device, p, ppr_adj, hop1_adj, hop2_adj, knn_adj, num_nodes,
