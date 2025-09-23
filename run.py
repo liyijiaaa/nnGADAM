@@ -43,7 +43,7 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
     train_ano_score = torch.zeros((args.local_epochs, num_nodes), dtype=torch.float)
 
     # 修改
-    for epoch in range(args.local_epochs):  # local_epochs:100
+    for epoch in range(args.local_epochs):
 
         net.train()
         if epoch >= 3:
@@ -212,41 +212,6 @@ def load_info_from_local(local_net, nor_idx, abnor_idx, device):
     return memo, nor_idx, abnor_idx, center
 
 
-# def load_info_from_local(local_net, device):
-#     if device >= 0:
-#         torch.cuda.set_device(device)
-#         local_net = local_net.to(device)
-#
-#     memo = torch.load('memo.pth')
-#     local_net.load_state_dict(torch.load('best_local_model.pkl'))
-#     graph = memo['graph']
-#     pos = graph.ndata['pos']
-#     scores = -pos.detach()
-#     ano_topk = 0.05  # k_ano
-#     nor_topk = 0.3  # k_nor
-#     num_nodes = graph.num_nodes()
-#
-#     num_ano = int(num_nodes * ano_topk)
-#     _, ano_idx = torch.topk(scores, num_ano)
-#
-#     num_nor = int(num_nodes * nor_topk)
-#     _, nor_idx = torch.topk(-scores, num_nor)
-#
-#     feats = graph.ndata['feat']
-#
-#     h, _ = local_net.encoder(feats)
-#
-#     center = h[nor_idx].mean(dim=0).detach()
-#
-#     if device >= 0:
-#         memo = {k: v.to(device) for k, v in memo.items()}
-#         nor_idx = nor_idx.cuda()
-#         ano_idx = ano_idx.cuda()
-#         center = center.cuda()
-#
-#     return memo, nor_idx, ano_idx, center
-#
-
 
 # 自适应采样修改
 def train_global(global_net, opt, graph, args):
@@ -278,10 +243,10 @@ def train_global(global_net, opt, graph, args):
     best = 999
     dur = []
 
-    # 自适应邻居采用修改开始点——初始化采样概率
+    # 自适应邻居开始点——初始化采样概率
     # 移除自环
     graph = dgl.remove_self_loop(graph)
-    # # # 添加自环
+    # 添加自环
     graph = dgl.add_self_loop(graph)
     # 邻接矩阵处理
     adj_sp = graph.adj_external(scipy_fmt='coo') # 正确用法
@@ -297,7 +262,7 @@ def train_global(global_net, opt, graph, args):
     power_adj_list = [normalized_adj]
     for m in range(2):
         power_adj_list.append(power_adj_list[0] * power_adj_list[m])
-    #随机游走修改
+    #随机游走
     ppr_adj = ppr_c * inv((sp.eye(adj_sp.shape[0]) - (1 - ppr_c) * column_normalized_adj).toarray())  # PPR
     hop1_adj = power_adj_list[0].toarray()
     hop2_adj = power_adj_list[1].toarray()
@@ -313,7 +278,7 @@ def train_global(global_net, opt, graph, args):
 
     warm_up_epoch = 3
     #奖励函数的计算次数
-    update_internal = 5
+    update_internal = 3
     update_day = -1
     torch.autograd.set_detect_anomaly(True)
 
@@ -336,9 +301,9 @@ def train_global(global_net, opt, graph, args):
 
         mix_score = -(scores + pos)
         if epoch >= warm_up_epoch and (epoch - update_day) >= update_internal:
-            # 计算奖励（采样效果评估）
+            # 计算奖励
             r = get_reward(device, p, ppr_adj, hop1_adj, hop2_adj, knn_adj, num_nodes,
-                           ada_neighbor_nodes, cost_mat=mix_score)
+                           ada_neighbor_nodes, cost_mat=pos)
 
             # 基于奖励更新采样权重_两个0.01是可变参数
             updated_param = np.exp((p_min / 2.0) * (r + 0.01 / p) * 100 * np.sqrt(
@@ -359,9 +324,7 @@ def train_global(global_net, opt, graph, args):
             best = loss.item()
             torch.save(global_net.state_dict(), 'best_global_model.pkl')
 
-        #mix_score = -(scores + pos)
         mix_score = mix_score.detach().cpu().numpy()
-
         mix_auc = roc_auc_score(labels, mix_score)
 
         sorted_idx = np.argsort(mix_score)
@@ -372,8 +335,6 @@ def train_global(global_net, opt, graph, args):
         recall_k = recall_score(np.ones(k), labels[topk_idx])
         ap = average_precision_score(labels, mix_score)
 
-        # print("Epoch {} | Time(s) {:.4f} | Loss {:.4f} | auc {:.4f} | mix_auc {:.4f}"
-        #       .format(epoch+1, np.mean(dur), loss.item(), auc, mix_auc))
         print("Epoch {} | Time(s) {:.4f} | Loss {:.4f} | mix_auc {:.4f} | recall@k {:.4f} | ap {:.4f}"
               .format(epoch + 1, np.mean(dur), loss.item(), mix_auc, recall_k, ap))
 
@@ -387,7 +348,7 @@ def main(args):
     # graph = graph.add_self_loop() test encoder=GCN
     feats = graph.ndata['feat']
 
-    # 修改,添加了一个正太池和异常池
+    # 添加一个正太池和异常池
     memorybank_nor = []
     memorybank_abnor = []
 
@@ -407,13 +368,8 @@ def main(args):
                                  weight_decay=args.weight_decay)
     t1 = time.time()
 
-
-    # train_local(local_net, graph, feats, local_opt, args)
-    # memo, nor_idx, ano_idx, center = load_info_from_local(local_net, args.gpu)
-
-    # 修改,将正态池异常池传递给训练函数
+    # 将正态池异常池传递给训练函数
     nor_idx, abnor_idx = train_local(local_net, graph, feats, local_opt, args, memorybank_nor, memorybank_abnor)
-
     memo, nor_idx, ano_idx, center = load_info_from_local(local_net, nor_idx, abnor_idx, args.gpu)
 
     t2 = time.time()

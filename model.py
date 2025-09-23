@@ -62,9 +62,6 @@ class Discriminator(nn.Module):
         super().__init__()
 
     def forward(self, features, centers):
-        # tmp = torch.matmul(features, self.weight)
-        # res = torch.sum(tmp * centers, dim=1)
-        # return torch.sigmoid(res)
         return torch.sum(features * centers, dim=1)
 
 
@@ -78,10 +75,10 @@ class Encoder(nn.Module):
 
     def forward(self, h):
         h = self.encoder(h)
-        mean_h = self.meanAgg(self.g, h)  # 邻居聚合得到子图表示
+        mean_h = self.meanAgg(self.g, h)
 
         return h, mean_h
-        #return h
+
 
 
 
