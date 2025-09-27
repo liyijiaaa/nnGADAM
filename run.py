@@ -355,6 +355,7 @@ def train_global(global_net, opt, graph, args):
         loss.backward()
         opt.step()
 
+
         if epoch >= 3:
             dur.append(time.time() - t0)
 
