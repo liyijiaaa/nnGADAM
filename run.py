@@ -127,7 +127,7 @@ from torch.nn.functional import normalize
 #
 #     return nor_idx, abnor_idx
 
-
+# 原始局部训练
 def train_local(net, graph, feats, opt, args, init=True):
     memo = {}
     labels = graph.ndata['label']
@@ -213,6 +213,8 @@ def train_local(net, graph, feats, opt, args, init=True):
 #
 #     return memo, nor_idx, abnor_idx, center
 
+
+#原始局部加载——固定比例得到高置信度节点
 def load_info_from_local(local_net, device):
     if device >= 0:
         torch.cuda.set_device(device)
@@ -327,7 +329,7 @@ def train_global(global_net, opt, graph, args):
 
         opt.zero_grad()
         #自适应邻居采样修改——自适应采样——k
-        sampled_result = adaptive_sampler(num_nodes, ppr_adj, hop1_adj, hop2_adj, knn_adj, p=p, total_sample_size=20)
+        sampled_result = adaptive_sampler(num_nodes, ppr_adj, hop1_adj, hop2_adj, knn_adj, p=p, total_sample_size=15)
 
         ada_neighbor_nodes = torch.stack(sampled_result).to(device).detach()
 
@@ -343,7 +345,7 @@ def train_global(global_net, opt, graph, args):
 
             # 基于奖励更新采样权重_两个0.01是可变参数
             updated_param = np.exp((p_min / 2.0) * (r + 0.01 / p) * 100 * np.sqrt(
-                np.log(20 / 0.01) / (sampling_ways * update_internal)))
+                np.log(15 / 0.01) / (sampling_ways * update_internal)))
             # updated_param = np.exp(
             #     (p_min / 2.0) * (r + 1 / p) * np.sqrt(np.log(20 / 0.1) / (sampling_ways * update_internal)))
 
@@ -408,6 +410,7 @@ def main(args):
     # nor_idx, abnor_idx = train_local(local_net, graph, feats, local_opt, args, memorybank_nor, memorybank_abnor)
     # memo, nor_idx, ano_idx, center = load_info_from_local(local_net, nor_idx, abnor_idx, args.gpu)
     #
+
 
     train_local(local_net, graph, feats, local_opt, args)
     memo, nor_idx, ano_idx, center = load_info_from_local(local_net, args.gpu)
