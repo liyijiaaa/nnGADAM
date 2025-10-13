@@ -329,7 +329,7 @@ def train_global(global_net, opt, graph, args):
 
         opt.zero_grad()
         #自适应邻居采样修改——自适应采样——k
-        sampled_result = adaptive_sampler(num_nodes, ppr_adj, hop1_adj, hop2_adj, knn_adj, p=p, total_sample_size=30)
+        sampled_result = adaptive_sampler(num_nodes, ppr_adj, hop1_adj, hop2_adj, knn_adj, p=p, total_sample_size=10)
 
         ada_neighbor_nodes = torch.stack(sampled_result).to(device).detach()
 
@@ -345,7 +345,7 @@ def train_global(global_net, opt, graph, args):
 
             # 基于奖励更新采样权重_两个0.01是可变参数
             updated_param = np.exp((p_min / 2.0) * (r + 0.01 / p) * 100 * np.sqrt(
-                np.log(30 / 0.01) / (sampling_ways * update_internal)))
+                np.log(10 / 0.01) / (sampling_ways * update_internal)))
             # updated_param = np.exp(
             #     (p_min / 2.0) * (r + 1 / p) * np.sqrt(np.log(20 / 0.1) / (sampling_ways * update_internal)))
 
