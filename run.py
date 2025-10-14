@@ -8,7 +8,7 @@ from utils import *
 from sklearn.metrics import roc_auc_score, recall_score, average_precision_score
 from pytorch_memlab import LineProfiler, profile
 from sklearn.preprocessing import MinMaxScaler
-
+import math
 #自适应采样添加
 from numpy.linalg import inv
 from torch.nn.functional import normalize
@@ -59,7 +59,7 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
         if epoch > 0:
             # 动态添加正太池
             _, train_list_temp = train_ano_score[epoch - 1].topk(
-                int((epoch / args.local_epochs) ** 2 * num_nodes), dim=0,
+                int(num_nodes * math.tan((math.pi / 4) * (epoch / args.local_epochs))), dim=0,
                 largest=False, sorted=True)
             train_list_temp = train_list_temp.cpu().numpy()
             train_list_temp = train_list_temp.tolist()
