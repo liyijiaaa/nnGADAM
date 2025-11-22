@@ -443,7 +443,7 @@ if __name__ == '__main__':
     register_data_args(parser)
     parser.add_argument("--data", type=str, default="Cora",
                         help="dataset")
-    parser.add_argument("--seed", type=int, default=717,
+    parser.add_argument("--seed", type=int, default=718,
                         help="random seed")
     parser.add_argument("--dropout", type=float, default=0.,
                         help="dropout probability")
