@@ -380,45 +380,109 @@ def train_global(global_net, opt, graph, args):
     return mix_auc, recall_k, ap
 
 
+# def main(args):
+#     seed_everything(args.seed)
+#
+#     graph = my_load_data(args.data)
+#     # graph = graph.add_self_loop() test encoder=GCN
+#     feats = graph.ndata['feat']
+#
+#     # 添加一个正太池和异常池
+#     memorybank_nor = []
+#     memorybank_abnor = []
+#
+#     if args.gpu >= 0:
+#         graph = graph.to(args.gpu)
+#
+#     in_feats = feats.shape[1]
+#
+#     # 初始化局部分数网络模型
+#     local_net = LocalModel(graph,
+#                            in_feats,
+#                            args.out_dim,
+#                            nn.PReLU(), )
+#     # 初始化局部分数优化器
+#     local_opt = torch.optim.Adam(local_net.parameters(),
+#                                  lr=args.local_lr,
+#                                  weight_decay=args.weight_decay)
+#     t1 = time.time()
+#
+#     # 将正态池异常池传递给训练函数
+#     nor_idx, abnor_idx = train_local(local_net, graph, feats, local_opt, args, memorybank_nor, memorybank_abnor)
+#     memo, nor_idx, ano_idx, center = load_info_from_local(local_net, nor_idx, abnor_idx, args.gpu)
+#
+#
+#
+#     # train_local(local_net, graph, feats, local_opt, args)
+#     # memo, nor_idx, ano_idx, center = load_info_from_local(local_net, args.gpu)
+#
+#     t2 = time.time()
+#     graph = memo['graph']
+#     global_net = GlobalModel(graph,
+#                              in_feats,
+#                              args.out_dim,
+#                              nn.PReLU(),
+#                              nor_idx,
+#                              ano_idx,
+#                              center,
+#                              args)
+#     opt = torch.optim.Adam(global_net.parameters(),
+#                            lr=args.global_lr,
+#                            weight_decay=args.weight_decay)  #arg.weight_decay
+#     t3 = time.time()
+#
+#     mix_auc, recall_k, ap = train_global(global_net, opt, graph, args)
+#     t4 = time.time()
+#
+#     t_all = t2 + t4 - t1 - t3
+#     print('mean_t:{:.4f}'.format(t_all / (args.local_epochs + args.global_epochs)))
+
+#种子修改
 def main(args):
-    seed_everything(args.seed)
+    res_list_auc = []
+    res_list_recall = []
+    res_list_ap = []
 
-    graph = my_load_data(args.data)
-    # graph = graph.add_self_loop() test encoder=GCN
-    feats = graph.ndata['feat']
+    seed_list = [i for i in range(1, 6)]  # 运行5次
 
-    # 添加一个正太池和异常池
-    memorybank_nor = []
-    memorybank_abnor = []
+    for seed in seed_list:
+        seed_everything(seed)
+        graph = my_load_data(args.data)
+        # graph = graph.add_self_loop() test encoder=GCN
+        feats = graph.ndata['feat']
 
-    if args.gpu >= 0:
-        graph = graph.to(args.gpu)
+        # 添加一个正太池和异常池
+        memorybank_nor = []
+        memorybank_abnor = []
 
-    in_feats = feats.shape[1]
+        if args.gpu >= 0:
+            graph = graph.to(args.gpu)
 
-    # 初始化局部分数网络模型
-    local_net = LocalModel(graph,
+        in_feats = feats.shape[1]
+
+        # 初始化局部分数网络模型
+        local_net = LocalModel(graph,
                            in_feats,
                            args.out_dim,
                            nn.PReLU(), )
-    # 初始化局部分数优化器
-    local_opt = torch.optim.Adam(local_net.parameters(),
+        # 初始化局部分数优化器
+        local_opt = torch.optim.Adam(local_net.parameters(),
                                  lr=args.local_lr,
                                  weight_decay=args.weight_decay)
-    t1 = time.time()
+        t1 = time.time()
 
-    # 将正态池异常池传递给训练函数
-    nor_idx, abnor_idx = train_local(local_net, graph, feats, local_opt, args, memorybank_nor, memorybank_abnor)
-    memo, nor_idx, ano_idx, center = load_info_from_local(local_net, nor_idx, abnor_idx, args.gpu)
+        # 将正态池异常池传递给训练函数
+        nor_idx, abnor_idx = train_local(local_net, graph, feats, local_opt, args, memorybank_nor, memorybank_abnor)
+        memo, nor_idx, ano_idx, center = load_info_from_local(local_net, nor_idx, abnor_idx, args.gpu)
 
 
 
-    # train_local(local_net, graph, feats, local_opt, args)
-    # memo, nor_idx, ano_idx, center = load_info_from_local(local_net, args.gpu)
+        # train_local(local_net, graph, feats, local_opt, args)
+        # memo, nor_idx, ano_idx, center = load_info_from_local(local_net, args.gpu)
 
-    t2 = time.time()
-    graph = memo['graph']
-    global_net = GlobalModel(graph,
+        t2 = time.time()
+        graph = memo['graph']
+        global_net = GlobalModel(graph,
                              in_feats,
                              args.out_dim,
                              nn.PReLU(),
@@ -426,17 +490,28 @@ def main(args):
                              ano_idx,
                              center,
                              args)
-    opt = torch.optim.Adam(global_net.parameters(),
+        opt = torch.optim.Adam(global_net.parameters(),
                            lr=args.global_lr,
                            weight_decay=args.weight_decay)  #arg.weight_decay
-    t3 = time.time()
+        t3 = time.time()
 
-    mix_auc, recall_k, ap = train_global(global_net, opt, graph, args)
-    t4 = time.time()
 
-    t_all = t2 + t4 - t1 - t3
-    print('mean_t:{:.4f}'.format(t_all / (args.local_epochs + args.global_epochs)))
+        mix_auc, recall_k, ap = train_global(global_net, opt, graph, args)
+        t4 = time.time()
 
+        t_all = t2 + t4 - t1 - t3
+        print('mean_t:{:.4f}'.format(t_all / (args.local_epochs + args.global_epochs)))
+        res_list_auc.append(mix_auc)
+        res_list_recall.append(recall_k)
+        res_list_ap.append(ap)
+
+    mean_auc = np.mean(res_list_auc)
+    std_auc = np.std(res_list_auc)
+    mean_recall = np.mean(res_list_recall)
+    std_recall = np.std(res_list_recall)
+    mean_ap = np.mean(res_list_ap)
+    std_ap = np.std(res_list_ap)
+    print("mean_auc {:.4f} | mean_recall {:.4f} | mean_ap {:.4f}",mean_auc, mean_recall, mean_ap)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='model')
