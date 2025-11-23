@@ -517,8 +517,8 @@ def main(args):
     std_recall = np.std(res_list_recall)
     mean_ap = np.mean(res_list_ap)
     std_ap = np.std(res_list_ap)
-    print("mean_auc {:.4f} | mean_recall {:.4f} | mean_ap {:.4f}",mean_auc, mean_recall, mean_ap)
-    print("std_auc {:.4f} | std_recall {:.4f} | std {:.4f}", std_auc, std_recall, std_ap)
+    print("mean_auc {:.4f} | mean_recall {:.4f} | mean_ap {:.4f}" .format(mean_auc, mean_recall, mean_ap))
+    print("std_auc {:.4f} | std_recall {:.4f} | std {:.4f}". format(std_auc, std_recall, std_ap))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='model')
