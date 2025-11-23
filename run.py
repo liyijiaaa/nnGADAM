@@ -444,6 +444,15 @@ def main(args):
     res_list_ap = []
     for num in range(1,6):
         seed_everything(args.seed)
+
+        #
+        np.random.seed(args.seed)
+        torch.manual_seed(args.seed)
+        torch.cuda.manual_seed(args.seed)
+        torch.cuda.manual_seed_all(args.seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        #
         graph = my_load_data(args.data)
         # graph = graph.add_self_loop() test encoder=GCN
         feats = graph.ndata['feat']
