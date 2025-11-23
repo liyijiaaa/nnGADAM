@@ -442,11 +442,8 @@ def main(args):
     res_list_auc = []
     res_list_recall = []
     res_list_ap = []
-
-    seed_list = [i for i in range(1, 6)]  # 运行5次
-
-    for seed in seed_list:
-        seed_everything(seed)
+    for num in range(1,6):
+        seed_everything(args.seed)
         graph = my_load_data(args.data)
         # graph = graph.add_self_loop() test encoder=GCN
         feats = graph.ndata['feat']
