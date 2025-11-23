@@ -512,13 +512,14 @@ def main(args):
     mean_ap = np.mean(res_list_ap)
     std_ap = np.std(res_list_ap)
     print("mean_auc {:.4f} | mean_recall {:.4f} | mean_ap {:.4f}",mean_auc, mean_recall, mean_ap)
+    print("std_auc {:.4f} | std_recall {:.4f} | std {:.4f}", std_auc, std_recall, std_ap)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='model')
     register_data_args(parser)
     parser.add_argument("--data", type=str, default="Cora",
                         help="dataset")
-    parser.add_argument("--seed", type=int, default=718,
+    parser.add_argument("--seed", type=int, default=717,
                         help="random seed")
     parser.add_argument("--dropout", type=float, default=0.,
                         help="dropout probability")
