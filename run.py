@@ -329,7 +329,7 @@ def train_global(global_net, opt, graph, args):
 
         opt.zero_grad()
         #自适应邻居采样修改——自适应采样——k
-        sampled_result = adaptive_sampler(num_nodes, ppr_adj, hop1_adj, hop2_adj, knn_adj, p=p, total_sample_size=25)
+        sampled_result = adaptive_sampler(num_nodes, ppr_adj, hop1_adj, hop2_adj, knn_adj, p=p, total_sample_size=args.neighbor_num)
 
         ada_neighbor_nodes = torch.stack(sampled_result).to(device).detach()
 
@@ -345,7 +345,7 @@ def train_global(global_net, opt, graph, args):
 
             # 基于奖励更新采样权重_两个0.01是可变参数
             updated_param = np.exp((p_min / 2.0) * (r + 0.01 / p) * 100 * np.sqrt(
-                np.log(25 / 0.01) / (sampling_ways * update_internal)))
+                np.log(args.neighbor_num / 0.01) / (sampling_ways * update_internal)))
             # updated_param = np.exp(
             #     (p_min / 2.0) * (r + 1 / p) * np.sqrt(np.log(20 / 0.1) / (sampling_ways * update_internal)))
 
@@ -549,6 +549,9 @@ if __name__ == '__main__':
                         help="early stop patience condition")
     parser.add_argument("--self-loop", action='store_true',
                         help="graph self-loop (default=False)")
+    parser.add_argument("--neighbor-num", type=int, default=25,
+                        help="number of neighbors to sample in adaptive sampling")
+
     parser.set_defaults(self_loop=True)
 
     args = parser.parse_args()
