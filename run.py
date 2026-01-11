@@ -451,27 +451,27 @@ def main(args):
     res_list_auc = []
     res_list_recall = []
     res_list_ap = []
-    for num in range(1,6):
-        seed_everything(args.seed)
+    # for num in range(1,6):
+    seed_everything(args.seed)
 
-        #
-        np.random.seed(args.seed)
-        torch.manual_seed(args.seed)
-        torch.cuda.manual_seed(args.seed)
-        torch.cuda.manual_seed_all(args.seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-        #
-        graph = my_load_data(args.data)
-        # graph = graph.add_self_loop() test encoder=GCN
-        feats = graph.ndata['feat']
+    #
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    #
+    graph = my_load_data(args.data)
+    # graph = graph.add_self_loop() test encoder=GCN
+    feats = graph.ndata['feat']
 
-        # 添加一个正太池和异常池
-        memorybank_nor = []
-        memorybank_abnor = []
+    # 添加一个正太池和异常池
+    memorybank_nor = []
+    memorybank_abnor = []
 
-        if args.gpu >= 0:
-            graph = graph.to(args.gpu)
+    if args.gpu >= 0:
+        graph = graph.to(args.gpu)
 
         in_feats = feats.shape[1]
 
@@ -516,18 +516,8 @@ def main(args):
 
         t_all = t2 + t4 - t1 - t3
         print('mean_t:{:.4f}'.format(t_all / (args.local_epochs + args.global_epochs)))
-        res_list_auc.append(mix_auc)
-        res_list_recall.append(recall_k)
-        res_list_ap.append(ap)
 
-    mean_auc = np.mean(res_list_auc)
-    std_auc = np.std(res_list_auc)
-    mean_recall = np.mean(res_list_recall)
-    std_recall = np.std(res_list_recall)
-    mean_ap = np.mean(res_list_ap)
-    std_ap = np.std(res_list_ap)
-    print("mean_auc {:.4f} | mean_recall {:.4f} | mean_ap {:.4f}" .format(mean_auc, mean_recall, mean_ap))
-    print("std_auc {:.4f} | std_recall {:.4f} | std {:.4f}". format(std_auc, std_recall, std_ap))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='model')
