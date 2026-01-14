@@ -390,8 +390,8 @@ def train_global(global_net, opt, graph, args):
     # 最小采样概率
     p_min = 0.05
 
-    #p = (1 - 4 * p_min) * sampling_weight / sum(sampling_weight) + p_min
-    p = np.array([0.25, 0.25, 0.25, 0.25]) #固定概率消融
+    p = (1 - 4 * p_min) * sampling_weight / sum(sampling_weight) + p_min
+   # p = np.array([0.25, 0.25, 0.25, 0.25]) #固定概率消融
     warm_up_epoch = 3
     #奖励函数的计算次数
     update_internal = 5
@@ -416,20 +416,21 @@ def train_global(global_net, opt, graph, args):
 
 
         mix_score = -(scores + pos)
-        # if epoch >= warm_up_epoch and (epoch - update_day) >= update_internal:
-        #     # 计算奖励
-        #     r = get_reward(device, p, ppr_adj, hop1_adj, hop2_adj, knn_adj, num_nodes,
-        #                    ada_neighbor_nodes, cost_mat=mix_score)
-        #
-        #     # 基于奖励更新采样权重_两个0.01是可变参数
-        #     updated_param = np.exp((p_min / 2.0) * (r + 0.01 / p) * 100 * np.sqrt(
-        #         np.log(args.neighbor_num / 0.01) / (sampling_ways * update_internal)))
-        #     # updated_param = np.exp(
-        #     #     (p_min / 2.0) * (r + 1 / p) * np.sqrt(np.log(20 / 0.1) / (sampling_ways * update_internal)))
-        #
-        #     sampling_weight = sampling_weight * updated_param
-        #     p = (1 - 4 * p_min) * sampling_weight / sum(sampling_weight) + p_min
-        #     update_day = epoch
+        if epoch >= warm_up_epoch and (epoch - update_day) >= update_internal:
+            # 计算奖励
+            r = get_reward(device, p, ppr_adj, hop1_adj, hop2_adj, knn_adj, num_nodes,
+                           ada_neighbor_nodes, cost_mat=mix_score)
+
+            # 基于奖励更新采样权重_两个0.01是可变参数
+            updated_param = np.exp((p_min / 2.0) * (r + 1 / p) * np.sqrt(
+                np.log(args.neighbor_num / 0.1) / (sampling_ways * update_internal)))
+
+           # updated_param = np.exp(
+            #     (p_min / 2.0) * (r + 1 / p) * np.sqrt(np.log(20 / 0.1) / (sampling_ways * update_internal)))
+
+            sampling_weight = sampling_weight * updated_param
+            p = (1 - 4 * p_min) * sampling_weight / sum(sampling_weight) + p_min
+            update_day = epoch
         loss.backward()
         opt.step()
 
