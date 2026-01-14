@@ -422,7 +422,7 @@ def train_global(global_net, opt, graph, args):
                            ada_neighbor_nodes, cost_mat=mix_score)
 
             # 基于奖励更新采样权重_两个0.01是可变参数
-            updated_param = np.exp((p_min / 2.0) * (r + 0.01 / p) * 10 * np.sqrt(
+            updated_param = np.exp((p_min / 2.0) * (r + 0.01 / p) * np.sqrt(
                 np.log(args.neighbor_num / 0.01) / (sampling_ways * update_internal)))
 
            # updated_param = np.exp(
