@@ -75,45 +75,45 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
 
         if epoch == (args.local_epochs - 1):
             # 归一化处理
-            # train_ano_score = train_ano_score.cpu().detach().numpy()
-            # scaler = MinMaxScaler()
-            # train_ano_score = scaler.fit_transform(train_ano_score.T).T
-            # train_ano_score = torch.DoubleTensor(train_ano_score).cuda()
-            #
-            # # 克隆一份
-            # train_ano_scoreclone = train_ano_score.clone()
-            #
-            # # 计算每个节点在多个epoch中正太池的平均异常得分
-            # for idx in range(len(memorybank_nor)):
-            #     train_ano_score[idx, memorybank_nor[idx]] = 0
-            # train_ano_score_nonzero = torch.count_nonzero(train_ano_score, dim=0)
-            # train_ano_score = torch.sum(train_ano_score, dim=0)
-            # train_ano_score = train_ano_score / train_ano_score_nonzero
-            # _, train_list = train_ano_score.topk(int(0.30 * num_nodes), dim=0, largest=False, sorted=True)
-            #
-            # train_list = train_list.cpu().numpy()
-            # train_list = train_list.tolist()
-            # nor_idx = train_list
-            #
-            #
-            # # 计算每个节点在多个epoch中异常池的平均异常得分
-            # for idx in range(len(memorybank_abnor)):
-            #     train_ano_scoreclone[idx, memorybank_abnor[idx]] = 0
-            # abnormal_non_zero_count = torch.count_nonzero(train_ano_scoreclone, dim=0)
-            # train_ano_scoreclone = torch.sum(train_ano_scoreclone, dim=0)
-            # train_ano_scoreclone = train_ano_scoreclone / abnormal_non_zero_count
-            # _, abnormal_indices = train_ano_scoreclone.topk(int(0.05 * num_nodes), dim=0, largest=True, sorted=True)
-            # abnor_idx = abnormal_indices.cpu().numpy().tolist()
+            train_ano_score = train_ano_score.cpu().detach().numpy()
+            scaler = MinMaxScaler()
+            train_ano_score = scaler.fit_transform(train_ano_score.T).T
+            train_ano_score = torch.DoubleTensor(train_ano_score).cuda()
+
+            # 克隆一份
+            train_ano_scoreclone = train_ano_score.clone()
+
+            # 计算每个节点在多个epoch中正太池的平均异常得分
+            for idx in range(len(memorybank_nor)):
+                train_ano_score[idx, memorybank_nor[idx]] = 0
+            train_ano_score_nonzero = torch.count_nonzero(train_ano_score, dim=0)
+            train_ano_score = torch.sum(train_ano_score, dim=0)
+            train_ano_score = train_ano_score / train_ano_score_nonzero
+            _, train_list = train_ano_score.topk(int(0.30 * num_nodes), dim=0, largest=False, sorted=True)
+
+            train_list = train_list.cpu().numpy()
+            train_list = train_list.tolist()
+            nor_idx = train_list
+
+
+            # 计算每个节点在多个epoch中异常池的平均异常得分
+            for idx in range(len(memorybank_abnor)):
+                train_ano_scoreclone[idx, memorybank_abnor[idx]] = 0
+            abnormal_non_zero_count = torch.count_nonzero(train_ano_scoreclone, dim=0)
+            train_ano_scoreclone = torch.sum(train_ano_scoreclone, dim=0)
+            train_ano_scoreclone = train_ano_scoreclone / abnormal_non_zero_count
+            _, abnormal_indices = train_ano_scoreclone.topk(int(0.05 * num_nodes), dim=0, largest=True, sorted=True)
+            abnor_idx = abnormal_indices.cpu().numpy().tolist()
 
             # 基于平均异常分数得到伪标签
-            node_avg_scores = torch.mean(train_ano_score, dim=0)
-            _, nor_indices = node_avg_scores.topk(int(0.30 * num_nodes), dim=0,
-                                                  largest=False, sorted=True)
-            nor_idx = nor_indices.cpu().numpy().tolist()
-
-            _, abnor_indices = node_avg_scores.topk(int(0.05 * num_nodes), dim=0,
-                                                    largest=True, sorted=True)
-            abnor_idx = abnor_indices.cpu().numpy().tolist()
+            # node_avg_scores = torch.mean(train_ano_score, dim=0)
+            # _, nor_indices = node_avg_scores.topk(int(0.30 * num_nodes), dim=0,
+            #                                       largest=False, sorted=True)
+            # nor_idx = nor_indices.cpu().numpy().tolist()
+            #
+            # _, abnor_indices = node_avg_scores.topk(int(0.05 * num_nodes), dim=0,
+            #                                         largest=True, sorted=True)
+            # abnor_idx = abnor_indices.cpu().numpy().tolist()
 
         if epoch >= 3:
             dur.append(time.time() - t0)
@@ -260,7 +260,7 @@ def load_info_from_local(local_net, nor_idx, abnor_idx, device):
 #
 
 
-# 自适应采样修改
+#原始第二阶段
 def train_global(global_net, opt, graph, args):
     epochs = args.global_epochs
 
@@ -290,80 +290,16 @@ def train_global(global_net, opt, graph, args):
     best = 999
     dur = []
 
-    # 自适应邻居开始点——初始化采样概率
-    # 移除自环
-    graph = dgl.remove_self_loop(graph)
-    # 添加自环
-    graph = dgl.add_self_loop(graph)
-    # 邻接矩阵处理
-    adj_sp = graph.adj_external(scipy_fmt='coo') # 正确用法
-
-    # 4种采样方式
-    sampling_ways = 4
-
-    normalized_adj = adj_normalize(adj_sp)  # 归一化邻接矩阵
-    column_normalized_adj = column_normalize(adj_sp)  # 列归一化
-    ppr_c = 0.15
-
-    # 幂次邻接矩阵（1-hop, 2-hop）
-    power_adj_list = [normalized_adj]
-    for m in range(2):
-        power_adj_list.append(power_adj_list[0] * power_adj_list[m])
-    #随机游走
-    ppr_adj = ppr_c * inv((sp.eye(adj_sp.shape[0]) - (1 - ppr_c) * column_normalized_adj).toarray())  # PPR
-    hop1_adj = power_adj_list[0].toarray()
-    hop2_adj = power_adj_list[1].toarray()
-    x = normalize(feats, dim=1).cpu()
-    knn_adj = np.array(torch.matmul(x, x.transpose(1, 0)))
-
-    # 四种采样方式
-    sampling_weight = np.ones(4)
-    # 最小采样概率
-    p_min = 0.05
-
-    p = (1 - 4 * p_min) * sampling_weight / sum(sampling_weight) + p_min
-
-    warm_up_epoch = 3
-    #奖励函数的计算次数
-    update_internal = 5
-    update_day = -1
-    torch.autograd.set_detect_anomaly(True)
-
     pred_labels = np.zeros_like(labels)
-
     for epoch in range(epochs):
         global_net.train()
         if epoch >= 3:
             t0 = time.time()
 
         opt.zero_grad()
-        #自适应邻居采样修改——自适应采样——k
-        sampled_result = adaptive_sampler(num_nodes, ppr_adj, hop1_adj, hop2_adj, knn_adj, p=p, total_sample_size=args.neighbor_num)
-
-        ada_neighbor_nodes = torch.stack(sampled_result).to(device).detach()
-
-        # 模型前向传播
-        loss, scores = global_net(feats, epoch, ada_neighbor_nodes)
-
-
-        mix_score = -(scores + pos)
-        if epoch >= warm_up_epoch and (epoch - update_day) >= update_internal:
-            # 计算奖励
-            r = get_reward(device, p, ppr_adj, hop1_adj, hop2_adj, knn_adj, num_nodes,
-                           ada_neighbor_nodes, cost_mat=mix_score)
-
-            # 基于奖励更新采样权重_两个0.01是可变参数
-            updated_param = np.exp((p_min / 2.0) * (r + 0.01 / p) * 100 * np.sqrt(
-                np.log(args.neighbor_num / 0.01) / (sampling_ways * update_internal)))
-            # updated_param = np.exp(
-            #     (p_min / 2.0) * (r + 1 / p) * np.sqrt(np.log(20 / 0.1) / (sampling_ways * update_internal)))
-
-            sampling_weight = sampling_weight * updated_param
-            p = (1 - 4 * p_min) * sampling_weight / sum(sampling_weight) + p_min
-            update_day = epoch
+        loss, scores = global_net(feats, epoch)
         loss.backward()
         opt.step()
-
 
         if epoch >= 3:
             dur.append(time.time() - t0)
@@ -372,7 +308,9 @@ def train_global(global_net, opt, graph, args):
             best = loss.item()
             torch.save(global_net.state_dict(), 'best_global_model.pkl')
 
+        mix_score = -(scores + pos)
         mix_score = mix_score.detach().cpu().numpy()
+
         mix_auc = roc_auc_score(labels, mix_score)
 
         sorted_idx = np.argsort(mix_score)
@@ -383,10 +321,141 @@ def train_global(global_net, opt, graph, args):
         recall_k = recall_score(np.ones(k), labels[topk_idx])
         ap = average_precision_score(labels, mix_score)
 
+        # print("Epoch {} | Time(s) {:.4f} | Loss {:.4f} | auc {:.4f} | mix_auc {:.4f}"
+        #       .format(epoch+1, np.mean(dur), loss.item(), auc, mix_auc))
         print("Epoch {} | Time(s) {:.4f} | Loss {:.4f} | mix_auc {:.4f} | recall@k {:.4f} | ap {:.4f}"
               .format(epoch + 1, np.mean(dur), loss.item(), mix_auc, recall_k, ap))
 
     return mix_auc, recall_k, ap
+
+
+# 自适应采样修改
+# def train_global(global_net, opt, graph, args):
+#     epochs = args.global_epochs
+#
+#     labels = graph.ndata['label'].cpu().numpy()
+#     num_nodes = graph.num_nodes()
+#     device = args.gpu
+#     feats = graph.ndata['feat']
+#     pos = graph.ndata['pos']
+#
+#     if device >= 0:
+#         torch.cuda.set_device(device)
+#         global_net = global_net.to(device)
+#         # labels = labels.cuda()
+#         feats = feats.cuda()
+#
+#     def init_xavier(m):
+#         if type(m) == nn.Linear:
+#             nn.init.xavier_normal_(m.weight)
+#
+#     init = True
+#     if init:
+#         global_net.apply(init_xavier)
+#
+#     print('train on:', 'cpu' if device < 0 else 'gpu {}'.format(device))
+#
+#     cnt_wait = 0
+#     best = 999
+#     dur = []
+#
+#     # 自适应邻居开始点——初始化采样概率
+#     # 移除自环
+#     graph = dgl.remove_self_loop(graph)
+#     # 添加自环
+#     graph = dgl.add_self_loop(graph)
+#     # 邻接矩阵处理
+#     adj_sp = graph.adj_external(scipy_fmt='coo') # 正确用法
+#
+#     # 4种采样方式
+#     sampling_ways = 4
+#
+#     normalized_adj = adj_normalize(adj_sp)  # 归一化邻接矩阵
+#     column_normalized_adj = column_normalize(adj_sp)  # 列归一化
+#     ppr_c = 0.15
+#
+#     # 幂次邻接矩阵（1-hop, 2-hop）
+#     power_adj_list = [normalized_adj]
+#     for m in range(2):
+#         power_adj_list.append(power_adj_list[0] * power_adj_list[m])
+#     #随机游走
+#     ppr_adj = ppr_c * inv((sp.eye(adj_sp.shape[0]) - (1 - ppr_c) * column_normalized_adj).toarray())  # PPR
+#     hop1_adj = power_adj_list[0].toarray()
+#     hop2_adj = power_adj_list[1].toarray()
+#     x = normalize(feats, dim=1).cpu()
+#     knn_adj = np.array(torch.matmul(x, x.transpose(1, 0)))
+#
+#     # 四种采样方式
+#     sampling_weight = np.ones(4)
+#     # 最小采样概率
+#     p_min = 0.05
+#
+#     p = (1 - 4 * p_min) * sampling_weight / sum(sampling_weight) + p_min
+#
+#     warm_up_epoch = 3
+#     #奖励函数的计算次数
+#     update_internal = 5
+#     update_day = -1
+#     torch.autograd.set_detect_anomaly(True)
+#
+#     pred_labels = np.zeros_like(labels)
+#
+#     for epoch in range(epochs):
+#         global_net.train()
+#         if epoch >= 3:
+#             t0 = time.time()
+#
+#         opt.zero_grad()
+#         #自适应邻居采样修改——自适应采样——k
+#         sampled_result = adaptive_sampler(num_nodes, ppr_adj, hop1_adj, hop2_adj, knn_adj, p=p, total_sample_size=args.neighbor_num)
+#
+#         ada_neighbor_nodes = torch.stack(sampled_result).to(device).detach()
+#
+#         # 模型前向传播
+#         loss, scores = global_net(feats, epoch, ada_neighbor_nodes)
+#
+#
+#         mix_score = -(scores + pos)
+#         if epoch >= warm_up_epoch and (epoch - update_day) >= update_internal:
+#             # 计算奖励
+#             r = get_reward(device, p, ppr_adj, hop1_adj, hop2_adj, knn_adj, num_nodes,
+#                            ada_neighbor_nodes, cost_mat=mix_score)
+#
+#             # 基于奖励更新采样权重_两个0.01是可变参数
+#             updated_param = np.exp((p_min / 2.0) * (r + 0.01 / p) * 100 * np.sqrt(
+#                 np.log(args.neighbor_num / 0.01) / (sampling_ways * update_internal)))
+#             # updated_param = np.exp(
+#             #     (p_min / 2.0) * (r + 1 / p) * np.sqrt(np.log(20 / 0.1) / (sampling_ways * update_internal)))
+#
+#             sampling_weight = sampling_weight * updated_param
+#             p = (1 - 4 * p_min) * sampling_weight / sum(sampling_weight) + p_min
+#             update_day = epoch
+#         loss.backward()
+#         opt.step()
+#
+#
+#         if epoch >= 3:
+#             dur.append(time.time() - t0)
+#
+#         if loss.item() < best:
+#             best = loss.item()
+#             torch.save(global_net.state_dict(), 'best_global_model.pkl')
+#
+#         mix_score = mix_score.detach().cpu().numpy()
+#         mix_auc = roc_auc_score(labels, mix_score)
+#
+#         sorted_idx = np.argsort(mix_score)
+#         k = int(sum(labels))
+#         topk_idx = sorted_idx[-k:]
+#         pred_labels[topk_idx] = 1
+#
+#         recall_k = recall_score(np.ones(k), labels[topk_idx])
+#         ap = average_precision_score(labels, mix_score)
+#
+#         print("Epoch {} | Time(s) {:.4f} | Loss {:.4f} | mix_auc {:.4f} | recall@k {:.4f} | ap {:.4f}"
+#               .format(epoch + 1, np.mean(dur), loss.item(), mix_auc, recall_k, ap))
+#
+#     return mix_auc, recall_k, ap
 
 
 # def main(args):
@@ -451,7 +520,7 @@ def main(args):
     res_list_auc = []
     res_list_recall = []
     res_list_ap = []
-    # for num in range(1,6):
+
     seed_everything(args.seed)
 
     #
@@ -487,8 +556,8 @@ def main(args):
         t1 = time.time()
 
         # 将正态池异常池传递给训练函数
-        nor_idx, abnor_idx = train_local(local_net, graph, feats, local_opt, args, memorybank_nor, memorybank_abnor)
-        memo, nor_idx, ano_idx, center = load_info_from_local(local_net, nor_idx, abnor_idx, args.gpu)
+        norm_idx, abnor_idx = train_local(local_net, graph, feats, local_opt, args, memorybank_nor, memorybank_abnor)
+        memo, nor_idx, ano_idx, center = load_info_from_local(local_net, norm_idx, abnor_idx, args.gpu)
 
 
 
