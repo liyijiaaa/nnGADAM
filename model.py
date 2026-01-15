@@ -126,60 +126,27 @@ class GlobalModel(nn.Module):
         self.center = center  # high confidence normal center
         self.args = args
         self.encoder = Encoder(graph, in_dim, out_dim, activation)
-        #self.pre_attn = self.pre_attention()
+        self.pre_attn = self.pre_attention()
 
-    # def pre_attention(self, ada_neighbor_nodes):
+    def pre_attention(self):
         # calculate pre-attn
-        # msg_func = lambda edges: {'abs_diff': torch.abs(edges.src['pos'] - edges.dst['pos'])}
-        # red_func = lambda nodes: {'pos_diff': torch.mean(nodes.mailbox['abs_diff'], dim=1)}
-        # self.g.update_all(msg_func, red_func)
-        #
-        # pos = self.g.ndata['pos']
-        # pos.requires_grad = False
-        #
-        # pos_diff = self.g.ndata['pos_diff'].detach()
-        #
-        # diff_mean = pos_diff[self.nor_idx].mean()
-        # diff_std = torch.sqrt(pos_diff[self.nor_idx].var())
-        #
-        # normalized_pos = (pos_diff - diff_mean) / diff_std
-        #
-        # attn = 1 - torch.sigmoid(normalized_pos)
-        #
-        # return attn.unsqueeze(1)
-        # pos = self.g.ndata['pos']
-        # pos.requires_grad = False
-        #
-        # # 初始化位置差异张量
-        # n_nodes = self.g.num_nodes()
-        # device = pos.device
-        # pos_diff = torch.zeros(n_nodes, device=device)
-        #
-        # # 计算每个节点与ada_neighbor_nodes的位置差异
-        # for i in range(n_nodes):
-        #     # 获取当前节点的邻居索引
-        #     neighbors = ada_neighbor_nodes[i]
-        #     # 过滤掉无效邻居（如填充值-1）
-        #     valid_neighbors = neighbors[neighbors >= 0]
-        #
-        #     if len(valid_neighbors) > 0:
-        #         # 计算当前节点与所有有效邻居的绝对差异
-        #         differences = torch.abs(pos[valid_neighbors] - pos[i])
-        #         # 计算平均差异
-        #         pos_diff[i] = torch.mean(differences)
-        #     else:
-        #         # 如果没有有效邻居，将差异设为0
-        #         pos_diff[i] = 0.0
-        #
-        # # 使用正常节点的统计量进行标准化
-        # pos_diff = pos_diff.detach()
-        # diff_mean = pos_diff[self.nor_idx].mean()
-        # diff_std = torch.sqrt(pos_diff[self.nor_idx].var() + 1e-8)  # 添加小值防止除零
-        #
-        # normalized_pos = (pos_diff - diff_mean) / diff_std
-        # attn = 1 - torch.sigmoid(normalized_pos)
-        #
-        # return attn.unsqueeze(1)
+        msg_func = lambda edges: {'abs_diff': torch.abs(edges.src['pos'] - edges.dst['pos'])}
+        red_func = lambda nodes: {'pos_diff': torch.mean(nodes.mailbox['abs_diff'], dim=1)}
+        self.g.update_all(msg_func, red_func)
+
+        pos = self.g.ndata['pos']
+        pos.requires_grad = False
+
+        pos_diff = self.g.ndata['pos_diff'].detach()
+
+        diff_mean = pos_diff[self.nor_idx].mean()
+        diff_std = torch.sqrt(pos_diff[self.nor_idx].var())
+
+        normalized_pos = (pos_diff - diff_mean) / diff_std
+
+        attn = 1 - torch.sigmoid(normalized_pos)
+
+        return attn.unsqueeze(1)
 
 
     def post_attention(self, h, mean_h):
@@ -225,8 +192,8 @@ class GlobalModel(nn.Module):
         beta = math.pow(self.beta, epoch)
         if beta < 0.1:
             beta = 0.
-        # attn = beta * self.pre_attn + (1 - beta) * post_attn
-        attn=post_attn
+        attn = beta * self.pre_attn + (1 - beta) * post_attn
+
         h = self.msg_pass(h, mean_h, attn)
         scores = self.discriminator(h, self.center)
 
