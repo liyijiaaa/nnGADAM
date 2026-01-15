@@ -157,7 +157,7 @@ class GlobalModel(nn.Module):
     def msg_pass(self, h, mean_h, attn):
         # h+attn*mean_h
         #nei = attn * self.neigh_weight
-        nei=0
+        nei = 0.5
         h = nei * mean_h + (1 - nei) * h
         return h
 
