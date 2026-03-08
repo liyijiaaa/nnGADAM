@@ -105,7 +105,7 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
             _, abnormal_indices = train_ano_scoreclone.topk(int(0.05 * num_nodes), dim=0, largest=True, sorted=True)
             abnor_idx = abnormal_indices.cpu().numpy().tolist()
 
-            # 基于平均异常分数得到伪标签
+            # 基于多轮平均异常分数得到伪标签
             # node_avg_scores = torch.mean(train_ano_score, dim=0)
             # _, nor_indices = node_avg_scores.topk(int(0.30 * num_nodes), dim=0,
             #                                       largest=False, sorted=True)
@@ -272,7 +272,7 @@ def train_global(global_net, opt, graph, args):
     # 添加自环
     graph = dgl.add_self_loop(graph)
     # 邻接矩阵处理
-    adj_sp = graph.adj_external(scipy_fmt='coo') # 正确用法
+    adj_sp = graph.adj_external(scipy_fmt='coo')
 
     # 4种采样方式
     sampling_ways = 4
