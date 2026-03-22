@@ -156,8 +156,8 @@ class GlobalModel(nn.Module):
 
     def msg_pass(self, h, mean_h, attn):
         # h+attn*mean_h
-        #nei = attn * self.neigh_weight
-        nei = 0.5 #自适应消息传递消融
+        nei = attn * self.neigh_weight
+        #nei = 0.5 #自适应消息传递消融
         h = nei * mean_h + (1 - nei) * h
         return h
 

@@ -272,7 +272,7 @@ def train_global(global_net, opt, graph, args):
     # 添加自环
     graph = dgl.add_self_loop(graph)
     # 邻接矩阵处理
-    #adj_sp = graph.adj_external(scipy_fmt='coo')
+    #adj_sp = graph.adj_external(scipy_fmt='coo')___不同版本
     adj_sp = graph.adj(scipy_fmt='coo')
 
     # 4种采样方式
