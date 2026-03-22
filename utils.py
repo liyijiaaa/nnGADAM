@@ -44,7 +44,7 @@ def t_v_t_split(train_ratio, val_ratio, num_nodes):
 
 def idx_sample(idxes):
     num_idx = len(idxes)
-    random_add = torch.randint(low=1, high=num_idx,size=(1, ), device='cpu')
+    random_add = torch.randint(low=1, high=num_idx, device='cpu')
     idx = torch.arange(0, num_idx)
 
     shuffled_idx = torch.remainder(idx+random_add, num_idx)
@@ -74,7 +74,6 @@ def my_load_data(dataname, path='./data/'):
     graph = load_graphs(data_dir)
 
     return graph[0][0]
-
 
 
 def pyg_to_dgl(pyg_graph):
