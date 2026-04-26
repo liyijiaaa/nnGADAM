@@ -464,20 +464,15 @@ def main(args):
         # 将正态池异常池传递给训练函数
         norm_idx, abnor_idx = train_local(local_net, graph, feats, local_opt, args, memorybank_nor, memorybank_abnor)
 
-
-        #####   记得删除######   添加异常节点的标签准确率
         if args.gpu >= 0:
-            labels = graph.ndata['label'].cpu().numpy()
+            labels_gpu = graph.ndata['label']
         else:
-            labels = graph.ndata['label'].numpy()
-
+            labels_gpu = torch.from_numpy(graph.ndata['label'].numpy())
         if len(abnor_idx) > 0:
-            abnor_accuracy = labels[abnor_idx].mean()  # 标签为 1 表示异常
+            abnor_accuracy = labels_gpu[abnor_idx].float().mean().item()
             print("First stage abnormal node accuracy: {:.4f}".format(abnor_accuracy))
         else:
             print("Warning: No abnormal nodes selected in first stage.")
-
-        ####
 
         memo, nor_idx, ano_idx, center = load_info_from_local(local_net, norm_idx, abnor_idx, args.gpu)
 
