@@ -85,11 +85,12 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
 
             # 计算每个节点在多个epoch中正太池的平均异常得分
             for idx in range(len(memorybank_nor)):
-                # train_ano_score[idx, memorybank_nor[idx]] = 0
+                #train_ano_score[idx, memorybank_nor[idx]] = 0
                 row = train_ano_score[idx]
                 mask = torch.ones_like(row, dtype=torch.bool)
                 mask[memorybank_nor[idx]] = False
                 row[mask] = 0
+
 
             train_ano_score_nonzero = torch.count_nonzero(train_ano_score, dim=0)
             train_ano_score = torch.sum(train_ano_score, dim=0)
@@ -103,11 +104,7 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
 
             # 计算每个节点在多个epoch中异常池的平均异常得分
             for idx in range(len(memorybank_abnor)):
-                #train_ano_scoreclone[idx, memorybank_abnor[idx]] = 0
-                row = train_ano_scoreclone[idx]
-                mask = torch.ones_like(row, dtype=torch.bool)
-                mask[memorybank_abnor[idx]] = False
-                row[mask] = 0
+                train_ano_scoreclone[idx, memorybank_abnor[idx]] = 0
 
             abnormal_non_zero_count = torch.count_nonzero(train_ano_scoreclone, dim=0)
             train_ano_scoreclone = torch.sum(train_ano_scoreclone, dim=0)
