@@ -85,11 +85,8 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
 
             # 计算每个节点在多个epoch中正太池的平均异常得分
             for idx in range(len(memorybank_nor)):
-                #train_ano_score[idx, memorybank_nor[idx]] = 0
-                row = train_ano_score[idx]
-                mask = torch.ones_like(row, dtype=torch.bool)
-                mask[memorybank_nor[idx]] = False
-                row[mask] = 0
+                train_ano_score[idx, memorybank_nor[idx]] = 0
+
 
 
             train_ano_score_nonzero = torch.count_nonzero(train_ano_score, dim=0)
@@ -466,11 +463,18 @@ def main(args):
             labels_gpu = graph.ndata['label']
         else:
             labels_gpu = torch.from_numpy(graph.ndata['label'].numpy())
+
         if len(abnor_idx) > 0:
             abnor_accuracy = labels_gpu[abnor_idx].float().mean().item()
             print("First stage abnormal node accuracy: {:.4f}".format(abnor_accuracy))
         else:
             print("Warning: No abnormal nodes selected in first stage.")
+
+        if len(norm_idx) > 0:
+            norm_accuracy = labels_gpu[norm_idx].float().mean().item()
+            print("First stage normal node accuracy: {:.4f}".format(norm_accuracy))
+        else:
+            print("Warning: No normal nodes selected in first stage.")
 
         memo, nor_idx, ano_idx, center = load_info_from_local(local_net, norm_idx, abnor_idx, args.gpu)
 
