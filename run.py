@@ -80,56 +80,32 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
             train_ano_score = scaler.fit_transform(train_ano_score.T).T
             train_ano_score = torch.DoubleTensor(train_ano_score).cuda()
 
-            # # 克隆一份
-            # train_ano_scoreclone = train_ano_score.clone()
-            #
-            # # 计算每个节点在多个epoch中正太池的平均异常得分
-            # for idx in range(len(memorybank_nor)):
-            #     train_ano_score[idx, memorybank_nor[idx]] = 0
-            # train_ano_score_nonzero = torch.count_nonzero(train_ano_score, dim=0)
-            # train_ano_score = torch.sum(train_ano_score, dim=0)
-            # train_ano_score = train_ano_score / train_ano_score_nonzero
-            # _, train_list = train_ano_score.topk(int(0.30 * num_nodes), dim=0, largest=False, sorted=True)
-            #
-            # train_list = train_list.cpu().numpy()
-            # train_list = train_list.tolist()
-            # nor_idx = train_list
-            #
-            #
-            # # 计算每个节点在多个epoch中异常池的平均异常得分
-            # for idx in range(len(memorybank_abnor)):
-            #     train_ano_scoreclone[idx, memorybank_abnor[idx]] = 0
-            # abnormal_non_zero_count = torch.count_nonzero(train_ano_scoreclone, dim=0)
-            # train_ano_scoreclone = torch.sum(train_ano_scoreclone, dim=0)
-            # train_ano_scoreclone = train_ano_scoreclone / abnormal_non_zero_count
-            # _, abnormal_indices = train_ano_scoreclone.topk(int(0.05 * num_nodes), dim=0, largest=True, sorted=True)
-            # abnor_idx = abnormal_indices.cpu().numpy().tolist()
+            # 克隆一份
+            train_ano_scoreclone = train_ano_score.clone()
 
-            # ========== 正常池：只保留被选中的分数，未选中的为0 ==========
-            selected_nor = torch.zeros_like(train_ano_score)  # 全零
-            for idx, selected_nodes in enumerate(memorybank_nor):
-                if len(selected_nodes) > 0:
-                    selected_nor[idx, selected_nodes] = train_ano_score[idx, selected_nodes]
+            # 计算每个节点在多个epoch中正太池的平均异常得分
+            for idx in range(len(memorybank_nor)):
+                train_ano_score[idx, memorybank_nor[idx]] = 0
+            train_ano_score_nonzero = torch.count_nonzero(train_ano_score, dim=0)
+            train_ano_score = torch.sum(train_ano_score, dim=0)
+            train_ano_score = train_ano_score / train_ano_score_nonzero
+            _, train_list = train_ano_score.topk(int(0.30 * num_nodes), dim=0, largest=False, sorted=True)
 
-            sum_nor = torch.sum(selected_nor, dim=0)
-            count_nor = torch.count_nonzero(selected_nor, dim=0)
-            avg_nor = sum_nor / count_nor.float()
-            avg_nor[count_nor == 0] = float('inf')  # 从未被选中的节点不能成为正常节点
-            _, nor_indices = avg_nor.topk(int(0.30 * num_nodes), dim=0, largest=False, sorted=True)
-            nor_idx = nor_indices.cpu().numpy().tolist()
+            train_list = train_list.cpu().numpy()
+            train_list = train_list.tolist()
+            nor_idx = train_list
 
-            # ========== 异常池：只保留被选中的分数，未选中的为0 ==========
-            selected_abnor = torch.zeros_like(train_ano_score)
-            for idx, selected_nodes in enumerate(memorybank_abnor):
-                if len(selected_nodes) > 0:
-                    selected_abnor[idx, selected_nodes] = train_ano_score[idx, selected_nodes]
 
-            sum_abnor = torch.sum(selected_abnor, dim=0)
-            count_abnor = torch.count_nonzero(selected_abnor, dim=0)
-            avg_abnor = sum_abnor / count_abnor.float()
-            avg_abnor[count_abnor == 0] = -float('inf')  # 从未被选中的节点不能成为异常节点
-            _, abnor_indices = avg_abnor.topk(int(0.05 * num_nodes), dim=0, largest=True, sorted=True)
-            abnor_idx = abnor_indices.cpu().numpy().tolist()
+            # 计算每个节点在多个epoch中异常池的平均异常得分
+            for idx in range(len(memorybank_abnor)):
+                train_ano_scoreclone[idx, memorybank_abnor[idx]] = 0
+            abnormal_non_zero_count = torch.count_nonzero(train_ano_scoreclone, dim=0)
+            train_ano_scoreclone = torch.sum(train_ano_scoreclone, dim=0)
+            train_ano_scoreclone = train_ano_scoreclone / abnormal_non_zero_count
+            _, abnormal_indices = train_ano_scoreclone.topk(int(0.05 * num_nodes), dim=0, largest=True, sorted=True)
+            abnor_idx = abnormal_indices.cpu().numpy().tolist()
+
+
 
 
 
