@@ -73,65 +73,65 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
             train_list_atemp = train_list_atemp.tolist()
             memorybank_abnor.append(train_list_atemp)
 
-        # if epoch == (args.local_epochs - 1):
-        #     # 归一化处理
-        #     train_ano_score = train_ano_score.cpu().detach().numpy()
-        #     scaler = MinMaxScaler()
-        #     train_ano_score = scaler.fit_transform(train_ano_score.T).T
-        #     train_ano_score = torch.DoubleTensor(train_ano_score).cuda()
-        #
-        #     # 克隆一份
-        #     train_ano_scoreclone = train_ano_score.clone()
-        #
-        #     # 计算每个节点在多个epoch中正太池的平均异常得分
-        #     for idx in range(len(memorybank_nor)):
-        #         train_ano_score[idx, memorybank_nor[idx]] = 0
-        #     train_ano_score_nonzero = torch.count_nonzero(train_ano_score, dim=0)
-        #     train_ano_score = torch.sum(train_ano_score, dim=0)
-        #     train_ano_score = train_ano_score / train_ano_score_nonzero
-        #     _, train_list = train_ano_score.topk(int(0.30 * num_nodes), dim=0, largest=False, sorted=True)
-        #
-        #     train_list = train_list.cpu().numpy()
-        #     train_list = train_list.tolist()
-        #     nor_idx = train_list
+        if epoch == (args.local_epochs - 1):
+            # 归一化处理
+            train_ano_score = train_ano_score.cpu().detach().numpy()
+            scaler = MinMaxScaler()
+            train_ano_score = scaler.fit_transform(train_ano_score.T).T
+            train_ano_score = torch.DoubleTensor(train_ano_score).cuda()
 
-            if epoch == (args.local_epochs - 1):
+            # 克隆一份
+            train_ano_scoreclone = train_ano_score.clone()
 
-                train_ano_score_np = train_ano_score.cpu().detach().numpy()
-                scaler = MinMaxScaler()
-                train_ano_score_np = scaler.fit_transform(train_ano_score_np.T).T
-                train_ano_score = torch.DoubleTensor(train_ano_score_np).cuda()
+            # 计算每个节点在多个epoch中正太池的平均异常得分
+            for idx in range(len(memorybank_nor)):
+                train_ano_score[idx, memorybank_nor[idx]] = 0
+            train_ano_score_nonzero = torch.count_nonzero(train_ano_score, dim=0)
+            train_ano_score = torch.sum(train_ano_score, dim=0)
+            train_ano_score = train_ano_score / train_ano_score_nonzero
+            _, train_list = train_ano_score.topk(int(0.30 * num_nodes), dim=0, largest=False, sorted=True)
+
+            train_list = train_list.cpu().numpy()
+            train_list = train_list.tolist()
+            nor_idx = train_list
+
+            # if epoch == (args.local_epochs - 1):
+            #
+            #     train_ano_score_np = train_ano_score.cpu().detach().numpy()
+            #     scaler = MinMaxScaler()
+            #     train_ano_score_np = scaler.fit_transform(train_ano_score_np.T).T
+            #     train_ano_score = torch.DoubleTensor(train_ano_score_np).cuda()
+            #
+            #
+            #     nor_score = train_ano_score.clone()
+            #     for idx in range(len(memorybank_nor)):
+            #         nor_score[idx, memorybank_nor[idx]] = 0
+            #     nor_nonzero = torch.count_nonzero(nor_score, dim=0)
+            #     nor_nonzero[nor_nonzero == 0] = 1
+            #     nor_mean = torch.sum(nor_score, dim=0) / nor_nonzero
+            #     _, nor_idx = nor_mean.topk(int(0.30 * num_nodes), largest=False, sorted=True)
+            #
+            #
+            #     ab_score = torch.zeros_like(train_ano_score)
+            #     for idx in range(len(memorybank_abnor)):
+            #         ab_score[idx, memorybank_abnor[idx]] = train_ano_score[idx, memorybank_abnor[idx]]
+            #     ab_nonzero = torch.count_nonzero(ab_score, dim=0)
+            #     ab_nonzero[ab_nonzero == 0] = 1
+            #     ab_mean = torch.sum(ab_score, dim=0) / ab_nonzero
+            #     _, abnor_idx = ab_mean.topk(int(0.05 * num_nodes), largest=True, sorted=True)
+            #
+            #     nor_idx = nor_idx.cpu().tolist()
+            #     abnor_idx = abnor_idx.cpu().tolist()
 
 
-                nor_score = train_ano_score.clone()
-                for idx in range(len(memorybank_nor)):
-                    nor_score[idx, memorybank_nor[idx]] = 0
-                nor_nonzero = torch.count_nonzero(nor_score, dim=0)
-                nor_nonzero[nor_nonzero == 0] = 1
-                nor_mean = torch.sum(nor_score, dim=0) / nor_nonzero
-                _, nor_idx = nor_mean.topk(int(0.30 * num_nodes), largest=False, sorted=True)
-
-
-                ab_score = torch.zeros_like(train_ano_score)
-                for idx in range(len(memorybank_abnor)):
-                    ab_score[idx, memorybank_abnor[idx]] = train_ano_score[idx, memorybank_abnor[idx]]
-                ab_nonzero = torch.count_nonzero(ab_score, dim=0)
-                ab_nonzero[ab_nonzero == 0] = 1
-                ab_mean = torch.sum(ab_score, dim=0) / ab_nonzero
-                _, abnor_idx = ab_mean.topk(int(0.05 * num_nodes), largest=True, sorted=True)
-
-                nor_idx = nor_idx.cpu().tolist()
-                abnor_idx = abnor_idx.cpu().tolist()
-
-
-            # 计算每个节点在多个epoch中异常池的平均异常得分
-            # for idx in range(len(memorybank_abnor)):
-            #     train_ano_scoreclone[idx, memorybank_abnor[idx]] = 0
-            # abnormal_non_zero_count = torch.count_nonzero(train_ano_scoreclone, dim=0)
-            # train_ano_scoreclone = torch.sum(train_ano_scoreclone, dim=0)
-            # train_ano_scoreclone = train_ano_scoreclone / abnormal_non_zero_count
-            # _, abnormal_indices = train_ano_scoreclone.topk(int(0.02 * num_nodes), dim=0, largest=True, sorted=True)
-            # abnor_idx = abnormal_indices.cpu().numpy().tolist()
+            #计算每个节点在多个epoch中异常池的平均异常得分
+            for idx in range(len(memorybank_abnor)):
+                train_ano_scoreclone[idx, memorybank_abnor[idx]] = 0
+            abnormal_non_zero_count = torch.count_nonzero(train_ano_scoreclone, dim=0)
+            train_ano_scoreclone = torch.sum(train_ano_scoreclone, dim=0)
+            train_ano_scoreclone = train_ano_scoreclone / abnormal_non_zero_count
+            _, abnormal_indices = train_ano_scoreclone.topk(int(0.02 * num_nodes), dim=0, largest=True, sorted=True)
+            abnor_idx = abnormal_indices.cpu().numpy().tolist()
 
             # 基于多轮平均异常分数得到伪标签
             # node_avg_scores = torch.mean(train_ano_score, dim=0)
