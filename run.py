@@ -59,7 +59,7 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
         if epoch > 0:
             # 动态添加正太池
             _, train_list_temp = train_ano_score[epoch - 1].topk(
-                int(num_nodes-(epoch / args.local_epochs) ** 2 * num_nodes), dim=0,
+                int((epoch / args.local_epochs) ** 2 * num_nodes), dim=0,
                 largest=False, sorted=True)
             train_list_temp = train_list_temp.cpu().numpy()
             train_list_temp = train_list_temp.tolist()
@@ -67,7 +67,7 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
 
             # 动态添加异常池——数量设置的一样
             _, train_list_atemp = train_ano_score[epoch - 1].topk(
-                int(num_nodes-(epoch / args.local_epochs) ** 2 * num_nodes), dim=0,
+                int((epoch / args.local_epochs) ** 2 * num_nodes), dim=0,
                 largest=True, sorted=True)
             train_list_atemp = train_list_atemp.cpu().numpy()
             train_list_atemp = train_list_atemp.tolist()
@@ -99,15 +99,15 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
 
             # 计算每个节点在多个epoch中异常池的平均异常得分
             for idx in range(len(memorybank_abnor)):
-                #train_ano_scoreclone[idx, memorybank_abnor[idx]] = 0
-                row = train_ano_scoreclone[idx]
-                mask = torch.ones_like(row, dtype=torch.bool)
-                mask[memorybank_abnor[idx]] = False
-                row[mask] = 0
+                train_ano_scoreclone[idx, memorybank_abnor[idx]] = 0
+                # row = train_ano_scoreclone[idx]
+                # mask = torch.ones_like(row, dtype=torch.bool)
+                # mask[memorybank_abnor[idx]] = False
+                # row[mask] = 0
             abnormal_non_zero_count = torch.count_nonzero(train_ano_scoreclone, dim=0)
             train_ano_scoreclone = torch.sum(train_ano_scoreclone, dim=0)
             train_ano_scoreclone = train_ano_scoreclone / abnormal_non_zero_count
-            _, abnormal_indices = train_ano_scoreclone.topk(int(0.005 * num_nodes), dim=0, largest=True, sorted=True)
+            _, abnormal_indices = train_ano_scoreclone.topk(int(0.03 * num_nodes), dim=0, largest=True, sorted=True)
             abnor_idx = abnormal_indices.cpu().numpy().tolist()
 
 
