@@ -107,7 +107,7 @@ def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, 
             abnormal_non_zero_count = torch.count_nonzero(train_ano_scoreclone, dim=0)
             train_ano_scoreclone = torch.sum(train_ano_scoreclone, dim=0)
             train_ano_scoreclone = train_ano_scoreclone / abnormal_non_zero_count
-            _, abnormal_indices = train_ano_scoreclone.topk(int(0.08* num_nodes), dim=0, largest=True, sorted=True)
+            _, abnormal_indices = train_ano_scoreclone.topk(int(0.07* num_nodes), dim=0, largest=True, sorted=True)
             abnor_idx = abnormal_indices.cpu().numpy().tolist()
 
 
