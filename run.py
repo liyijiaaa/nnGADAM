@@ -309,7 +309,8 @@ def train_global(global_net, opt, graph, args):
     p = (1 - 4 * p_min) * sampling_weight / sum(sampling_weight) + p_min
 
     #p = np.array([0.25, 0.25, 0.25, 0.25]) #固定概率消融
-    warm_up_epoch = 3
+    # warm_up_epoch = 3
+    warm_up_epoch = 0
     #奖励函数的计算次数
     update_internal = 5
     update_day = -1
