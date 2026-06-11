@@ -247,6 +247,7 @@ def load_info_from_local(local_net, nor_idx, abnor_idx, device):
 # 自适应采样修改
 def train_global(global_net, opt, graph, args):
     epochs = args.global_epochs
+    mix_lambda = args.mix_lambda
 
     labels = graph.ndata['label'].cpu().numpy()
     num_nodes = graph.num_nodes()
@@ -309,10 +310,10 @@ def train_global(global_net, opt, graph, args):
     p = (1 - 4 * p_min) * sampling_weight / sum(sampling_weight) + p_min
 
     #p = np.array([0.25, 0.25, 0.25, 0.25]) #固定概率消融
-    # warm_up_epoch = 3
+
     warm_up_epoch = 3
     #奖励函数的计算次数
-    update_internal = 1
+    update_internal = 5
     update_day = -1
     torch.autograd.set_detect_anomaly(True)
 
@@ -333,7 +334,7 @@ def train_global(global_net, opt, graph, args):
         loss, scores = global_net(feats, epoch, ada_neighbor_nodes)
 
 
-        mix_score = -(scores + pos)
+        mix_score = -(mix_lambda * pos + (1-mix_lambda) * scores)
         if epoch >= warm_up_epoch and (epoch - update_day) >= update_internal:
             # 计算奖励
             r = get_reward(device, p, ppr_adj, hop1_adj, hop2_adj, knn_adj, num_nodes,
@@ -552,6 +553,8 @@ if __name__ == '__main__':
                         help="graph self-loop (default=False)")
     parser.add_argument("--neighbor-num", type=int, default=25,
                         help="number of neighbors to sample in adaptive sampling")
+    parser.add_argument("--mix-lambda", type=float, default=0.5,
+                        help="balance factor for local and global anomaly scores (λ)")
 
     parser.set_defaults(self_loop=True)
 
