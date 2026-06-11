@@ -553,7 +553,7 @@ if __name__ == '__main__':
                         help="graph self-loop (default=False)")
     parser.add_argument("--neighbor-num", type=int, default=25,
                         help="number of neighbors to sample in adaptive sampling")
-    parser.add_argument("w", type=float, default=0.5,
+    parser.add_argument("--mix-lambda", type=float, default=0.5,
                         help="balance factor for local and global anomaly scores (λ)")
 
     parser.set_defaults(self_loop=True)
