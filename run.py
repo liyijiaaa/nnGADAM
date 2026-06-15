@@ -15,6 +15,7 @@ from torch.nn.functional import normalize
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 
+
 # 正太池异常池修改
 def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, init=True):
     memo = {}
@@ -541,7 +542,7 @@ def main(args):
         plt.title('t-SNE visualization of node embeddings (GlobalModel Encoder)')
         plt.xlabel('t-SNE dimension 1')
         plt.ylabel('t-SNE dimension 2')
-        plt.show()
+        plt.savefig('/kaggle/working/tsne_embedding.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':
