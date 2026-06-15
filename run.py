@@ -538,7 +538,7 @@ def main(args):
         emb_2d = tsne.fit_transform(emb)
         plt.figure(figsize=(10, 8))
 
-        colors = ['darkblue' if label == 0 else 'red' for label in labels]
+        colors = ['#8B9BC1' if label == 0 else '#FF6B6B' for label in labels]
 
         plt.scatter(emb_2d[:, 0], emb_2d[:, 1], c=colors, s=10, alpha=0.7, edgecolors='none')
 
@@ -546,7 +546,7 @@ def main(args):
         plt.axis('off')
 
         # 保存图像（高 DPI，紧凑裁剪白边）
-        plt.savefig('/kaggle/working/tsne_embedding1.png', dpi=300, bbox_inches='tight', pad_inches=0)
+        plt.savefig('/kaggle/working/tsne_embedding2.png', dpi=300, bbox_inches='tight', pad_inches=0)
         print("✅ 图像已保存到 /kaggle/working/tsne_embedding.png")
 
 
