@@ -12,6 +12,8 @@ import math
 #自适应采样添加
 from numpy.linalg import inv
 from torch.nn.functional import normalize
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
 
 # 正太池异常池修改
 def train_local(net, graph, feats, opt, args, memorybank_nor, memorybank_abnor, init=True):
@@ -520,6 +522,26 @@ def main(args):
         t_all = t2 + t4 - t1 - t3
         print('mean_t:{:.4f}'.format(t_all / (args.local_epochs + args.global_epochs)))
 
+        ###节点嵌入可视化
+        best_global_model_path = 'best_global_model.pkl'
+        global_net.load_state_dict(torch.load(best_global_model_path))
+        global_net.eval()
+        feats = graph.ndata['feat']
+        labels = graph.ndata['label'].cpu().numpy()
+        with torch.no_grad():
+            if args.gpu >= 0:
+                feats = feats.cuda()
+            emb, _ = global_net.encoder(feats)  # emb shape: (N, out_dim)
+            emb = emb.cpu().numpy()
+        tsne = TSNE(n_components=2, perplexity=30, random_state=42, init='pca')
+        emb_2d = tsne.fit_transform(emb)
+        plt.figure(figsize=(10, 8))
+        scatter = plt.scatter(emb_2d[:, 0], emb_2d[:, 1], c=labels, cmap='coolwarm', s=10, alpha=0.7)
+        plt.colorbar(scatter, label='True Label (0=normal, 1=anomaly)')
+        plt.title('t-SNE visualization of node embeddings (GlobalModel Encoder)')
+        plt.xlabel('t-SNE dimension 1')
+        plt.ylabel('t-SNE dimension 2')
+        plt.show()
 
 
 if __name__ == '__main__':
