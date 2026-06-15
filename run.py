@@ -544,10 +544,10 @@ def main(args):
 
         # 隐藏整个坐标轴（包括刻度、标签、边框）
         plt.axis('off')
-        plt.text(0.5, -0.05, 'LG-RAMP(ours)', transform=plt.gca().transAxes, ha='center', va='top', fontsize=12)
+        plt.text(0.5, -0.05, 'GADAM', transform=plt.gca().transAxes, ha='center', va='top', fontsize=12)
 
         # 保存图像（高 DPI，紧凑裁剪白边）
-        plt.savefig('/kaggle/working/tsne_embedding4.png', dpi=300, bbox_inches='tight', pad_inches=0)
+        plt.savefig('/kaggle/working/tsne_embedding5.png', dpi=300, bbox_inches='tight', pad_inches=0)
         print("✅ 图像已保存到 /kaggle/working/tsne_embedding.png")
 
 
