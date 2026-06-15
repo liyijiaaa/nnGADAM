@@ -537,12 +537,17 @@ def main(args):
         tsne = TSNE(n_components=2, perplexity=30, random_state=42, init='pca')
         emb_2d = tsne.fit_transform(emb)
         plt.figure(figsize=(10, 8))
-        scatter = plt.scatter(emb_2d[:, 0], emb_2d[:, 1], c=labels, cmap='coolwarm', s=10, alpha=0.7)
-        plt.colorbar(scatter, label='True Label (0=normal, 1=anomaly)')
-        plt.title('t-SNE visualization of node embeddings (GlobalModel Encoder)')
-        plt.xlabel('t-SNE dimension 1')
-        plt.ylabel('t-SNE dimension 2')
-        plt.savefig('/kaggle/working/tsne_embedding.png', dpi=300, bbox_inches='tight')
+
+        colors = ['darkblue' if label == 0 else 'red' for label in labels]
+
+        plt.scatter(emb_2d[:, 0], emb_2d[:, 1], c=colors, s=10, alpha=0.7, edgecolors='none')
+
+        # 隐藏整个坐标轴（包括刻度、标签、边框）
+        plt.axis('off')
+
+        # 保存图像（高 DPI，紧凑裁剪白边）
+        plt.savefig('/kaggle/working/tsne_embedding1.png', dpi=300, bbox_inches='tight', pad_inches=0)
+        print("✅ 图像已保存到 /kaggle/working/tsne_embedding.png")
 
 
 if __name__ == '__main__':
